@@ -1,6 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-// const ort = require('onnxruntime-web');
 var session = ort.InferenceSession;
 
 // The mean of the ImageNet dataset used to train the model
