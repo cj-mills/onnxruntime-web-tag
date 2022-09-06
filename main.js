@@ -1,4 +1,4 @@
-var session = ort.InferenceSession;
+let session;
 
 // The mean of the ImageNet dataset used to train the model
 const mean = [0.485, 0.456, 0.406];
@@ -54,9 +54,6 @@ async function main() {
     var exec_provider = 'wasm';
     var return_msg = await init_session(model_path, exec_provider);
     document.getElementById('output_text').innerHTML += `<br>${(return_msg).toString()}`;
-    // init_session(model_path, exec_provider).then(return_msg => {
-    // document.getElementById('output_text').innerHTML += `<br>${(return_msg).toString()}`;
-    // })
 
     console.log(`Input Name: ${session.inputNames[0]}`);
 
@@ -67,9 +64,8 @@ async function main() {
     context.drawImage(image, 0, 0);
     var imageData = context.getImageData(0, 0, image.width, image.height);
 
-    // 1. Get buffer data from image.
+    // Get buffer data from image
     var imageBufferData = imageData.data;
-    // console.log(`RGBA Data: ${imageBufferData}`);
 
     console.time('Preprocessing');
     const [redArray, greenArray, blueArray] = new Array(
@@ -77,7 +73,7 @@ async function main() {
         new Array(),
         new Array());
 
-    // 2. Loop through the image buffer and extract the R, G, and B channels
+    // Loop through the image buffer and extract the R, G, and B channels
     for (let i = 0; i < imageBufferData.length; i += 4) {
         redArray.push(((imageBufferData[i] / 255.0) - mean[0]) / std_dev[0]);
         greenArray.push(((imageBufferData[i + 1] / 255.0) - mean[1]) / std_dev[1]);
@@ -85,16 +81,16 @@ async function main() {
         // skip data[i + 3] to filter out the alpha channel
     }
 
-    // 3. Concatenate RGB to transpose [224, 224, 3] -> [3, 224, 224] to a number array
+    // Convert from channels-last format to channels-first format
     const float32Data = Float32Array.from(redArray.concat(greenArray).concat(blueArray));
     console.timeEnd('Preprocessing');
 
-    // 5. create the tensor object from onnxruntime-web.
+    // Create the tensor object
     const input_tensor = new ort.Tensor("float32", float32Data, [1, 3, image.height, image.width]);
     const feeds = {};
     feeds[session.inputNames[0]] = input_tensor;
 
-    // feed inputs and run
+    // Feed inputs and run
     const start = new Date();
     var index = await PerformInferenceAsync(session, feeds).then(outputData => {
         const output = outputData[session.outputNames[0]];
@@ -104,7 +100,7 @@ async function main() {
     })
     const end = new Date();
 
-    // read from results
+    // Display results
     document.getElementById('output_text').innerHTML += `<br>Predicted class index: ${index}`;
     document.getElementById('output_text').innerHTML += `<br>Inference Time: ${(end.getTime() - start.getTime())}ms`;
 }
